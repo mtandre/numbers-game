@@ -1,0 +1,244 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title></title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            body {font-family:monospace;}
+            h1{text-align:center;}
+            p {margin-left:5%; margin-right:5%;}
+            #gameBoard table, tr, td {padding:0; margin:0;}
+            #gameBoard table {width:90%; height:90%; border:solid black 1px; margin:0 5%;}
+            #gameBoard td {border:solid black 1px; vertical-align:middle; text-align:center; padding:50px;}
+            .muncher {background: dodgerblue; color: #fff;}
+            #controls {position:absolute; top:0; right:30px;}
+            #lives span, #level span {padding:5px 5px 5px; transition: background-color 2s ease;}
+        </style>
+    </head>
+    <body>
+        <h1>Multiples of <span id="multiple">2</span></h1>
+        <div id="gameBoard"></div>
+        <p>
+            Lives: <span id="lives"></span>
+            Score: <span id="score"></span>
+            <span style="float:right">Level: <span id="level"></span></span>
+        </p>
+<pre id="controls">
+          ↑
+move:   ← ↓ →
+eat:  spacebar
+</pre>
+        <script>
+            var board = document.getElementById('gameBoard');
+
+            //default grid settings
+            var width = 6;
+            var height = 5;
+            var gridTotal = width * height;
+
+            var multiplesOf = 2;
+            var validAnswers = [];
+
+            var level = 1,
+                lives = 3,
+                score = 0,
+                eaten = 0;
+
+            //random number
+            function getNumber(min, max) {
+                var number = Math.floor(Math.random() * (max - min + 1)) + min;
+                if (isMultiple(number)) {
+                    validAnswers.push(number);
+                }
+                return number;
+            }
+
+            //generate grid
+            function generateGrid(x, y, min, max, el) {
+                var muncherStart = Math.round( (x * y) / 2);
+                var gridCount = 1;
+                var grid = document.createElement('table');
+                for(var i = 0; i < y; i++) {
+                    var row = grid.insertRow();
+                    for(var j = 0; j < x; j++) {
+                        var cell = row.insertCell();
+                        cell.id = gridCount;
+                        if(gridCount === muncherStart) {
+                            cell.className = 'muncher';
+                        }
+                        cell.innerText = getNumber(min,max);
+                        gridCount++;
+                    }
+                }
+                el.appendChild(grid);
+            }
+            generateGrid(width, height, 1, 25, board);
+            updateLives(0);
+            updateLevel(0);
+            updateScore(0);
+
+            //movement directions
+            function moveRight() {
+                var muncher = document.querySelector('.muncher');
+                var currentMuncherLocation = parseInt(muncher.id, 10);
+                var newMuncherLocation = currentMuncherLocation + 1;
+                if(currentMuncherLocation % width !== 0) {
+                    muncher.className = '';
+                    document.getElementById(newMuncherLocation).className = 'muncher';
+                }
+            }
+            function moveLeft() {
+                var muncher = document.querySelector('.muncher');
+                var currentMuncherLocation = parseInt(muncher.id, 10);
+                var newMuncherLocation = currentMuncherLocation - 1;
+                if(currentMuncherLocation % width !== 1) {
+                    muncher.className = '';
+                    document.getElementById(newMuncherLocation).className = 'muncher';
+                }
+            }
+            function moveUp() {
+                var muncher = document.querySelector('.muncher');
+                var currentMuncherLocation = parseInt(muncher.id, 10);
+                var newMuncherLocation = currentMuncherLocation - width;
+                if(currentMuncherLocation > width) {
+                    muncher.className = '';
+                    document.getElementById(newMuncherLocation).className = 'muncher';
+                }
+            }
+            function moveDown() {
+                var muncher = document.querySelector('.muncher');
+                var currentMuncherLocation = parseInt(muncher.id, 10);
+                var newMuncherLocation = currentMuncherLocation + width;
+                if(currentMuncherLocation <= (gridTotal - width)) {
+                    muncher.className = '';
+                    document.getElementById(newMuncherLocation).className = 'muncher';
+                }
+            }
+
+            //eat number
+            function eat() {
+                var muncher = document.querySelector('.muncher');
+                var num = parseInt(muncher.innerText,10);
+                if(!isNaN(num)) {
+                    var inAnswersArray = validAnswers.indexOf(num);
+                    if(inAnswersArray > -1) {
+                        validAnswers.splice(inAnswersArray, 1);
+                        muncher.innerText = ' ';
+                        updateScore(multiplesOf);
+                        if (validAnswers.length < 1) {
+                            levelUp();
+                        }
+                    } else {
+                        console.log("cant eat: " + num);
+                        updateLives(-1);
+                    }
+                }
+            }
+
+            //game logic
+            function isMultiple(value) {
+                if(value % multiplesOf === 0) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            // manage lives
+            function updateLives(value) {
+                var l = document.getElementById('lives');
+                lives = lives + value;
+                if(value > 0) {
+                    var html = '<span style="background-color:lightgreen;">' + lives + '</span>';
+                } else if (value < 0) {
+                    var html = '<span style="background-color:lightcoral;">' + lives + '</span>';
+                } else {
+                    var html = '<span>' + lives + '</span>';
+                }
+                l.innerHTML = html;
+                l.focus();
+                l.getElementsByTagName('span')[0].style.background = 'white';
+                if (lives < 1) {
+                     console.log("Game over: out of lives");
+                }
+            }
+
+            // manage level
+            function updateLevel(value) {
+                var l = document.getElementById('level');
+                level = level + value;
+                if(value > 0) {
+                    var html = '<span style="background-color:lightgreen;">' + level + '</span>';
+                } else if (value < 0) {
+                    var html = '<span style="background-color:lightcoral;">' + level + '</span>';
+                } else {
+                    var html = '<span>' + level + '</span>';
+                }
+                l.innerHTML = html;
+                l.focus();
+                l.getElementsByTagName('span')[0].style.background = 'white';
+            }
+
+            // manage score
+            function updateScore(value) {
+                var s = document.getElementById('score');
+                score = score + value;
+                if(value > 0) {
+                    var html = '<span style="background-color:lightgreen;">' + score + '</span>';
+                } else {
+                    var html = '<span>' + score + '</span>';
+                }
+                s.innerHTML = html;
+                s.focus();
+                s.getElementsByTagName('span')[0].style.background = 'white';
+                eaten++;
+            }
+
+            //new level
+            function levelUp() {
+              //clear board
+              board.innerHTML = '';
+              validAnswers = [];
+
+              //jump to next level
+              updateLevel(1);
+              updateLives(1);
+              multiplesOf++;
+              document.getElementById('multiple').innerText = multiplesOf;
+              generateGrid(width, height, 1, Math.round(25 * 0.5 * multiplesOf), board);
+            }
+
+            //user input
+            document.onkeydown = function(e) {
+                e = e || window.event;
+                switch(e.which || e.keyCode) {
+                    case 37: // left
+                        moveLeft();
+                    break;
+
+                    case 38: // up
+                        moveUp();
+                    break;
+
+                    case 39: // right
+                        moveRight();
+                    break;
+
+                    case 40: // down
+                        moveDown();
+                    break;
+
+                    case 32: // spacebar
+                        eat();
+                    break;
+
+                    default: return; // exit this handler for other keys
+                }
+                e.preventDefault();
+            };
+        </script>
+    </body>
+</html>
