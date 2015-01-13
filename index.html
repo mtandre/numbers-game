@@ -29,7 +29,7 @@
     <span style="float:right">Level: <span id="level"></span></span>
   </p>
   <pre id="controls">
-    ↑
+              ↑
     move:   ← ↓ →
     eat:  spacebar
   </pre>
@@ -51,6 +51,8 @@
 
   var messageOverride = '';
   var showingMessage = false;
+
+  var troggleInterval;
 
   // start game
   generateGrid(width, height, 1, 25, board);
@@ -225,6 +227,7 @@
     board.innerHTML = '';
     validAnswers = [];
     eaten = 0;
+    clearInterval(troggleInterval);
 
     //jump to next level
     updateLevel(1);
@@ -236,6 +239,7 @@
 
   // show message
   function showMessage(msgText) {
+    clearInterval(troggleInterval);
     var rows = document.getElementsByTagName('tr');
     var rowNum = Math.round(rows.length / 2) - 1;
     var centerRow = rows[rowNum];
@@ -270,19 +274,15 @@
     var rnd = Math.floor(Math.random()*4);
     var start = corners[rnd];
     document.getElementById(start).className = 'troggle';
-    setInterval(moveTroggle, 2000);
+    troggleInterval = setInterval(moveTroggle, 2000);
   }
+
   function moveTroggle() {
-    console.log("moving");
     var directions = ["up","right","down","left"];
     var rnd = Math.floor(Math.random()*4);
     var dir = directions[rnd];
 
-
     // TODO: collision detection for lost life
-
-
-
 
     switch (dir) {
       case "up":
