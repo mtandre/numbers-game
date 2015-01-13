@@ -1,244 +1,356 @@
 <!doctype html>
 <html>
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title></title>
-        <meta name="description" content="">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>
-            body {font-family:monospace;}
-            h1{text-align:center;}
-            p {margin-left:5%; margin-right:5%;}
-            #gameBoard table, tr, td {padding:0; margin:0;}
-            #gameBoard table {width:90%; height:90%; border:solid black 1px; margin:0 5%;}
-            #gameBoard td {border:solid black 1px; vertical-align:middle; text-align:center; padding:50px;}
-            .muncher {background: dodgerblue; color: #fff;}
-            #controls {position:absolute; top:0; right:30px;}
-            #lives span, #level span {padding:5px 5px 5px; transition: background-color 2s ease;}
-        </style>
-    </head>
-    <body>
-        <h1>Multiples of <span id="multiple">2</span></h1>
-        <div id="gameBoard"></div>
-        <p>
-            Lives: <span id="lives"></span>
-            Score: <span id="score"></span>
-            <span style="float:right">Level: <span id="level"></span></span>
-        </p>
-<pre id="controls">
-          ↑
-move:   ← ↓ →
-eat:  spacebar
-</pre>
-        <script>
-            var board = document.getElementById('gameBoard');
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title></title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+  body {font-family:monospace;}
+  h1{text-align:center;}
+  p {margin-left:5%; margin-right:5%;}
+  #gameBoard table, tr, td {padding:0; margin:0;}
+  #gameBoard table {width:90%; height:90%; border:solid black 1px; margin:0 5%;}
+  #gameBoard td {border:solid black 1px; vertical-align:middle; text-align:center; padding:50px;}
+  .message {text-align: center;}
+  .muncher {background: dodgerblue; color: #fff;}
+  .troggle {background: lightcoral; }
+  #controls {position:absolute; top:0; right:30px;}
+  #lives span, #level span {padding:5px 5px 5px; transition: background-color 2s ease;}
+  </style>
+</head>
+<body>
+  <h1>Multiples of <span id="multiple">2</span></h1>
+  <div id="gameBoard"></div>
+  <p>
+    Lives: <span id="lives"></span>
+    Score: <span id="score"></span>
+    <span style="float:right">Level: <span id="level"></span></span>
+  </p>
+  <pre id="controls">
+    ↑
+    move:   ← ↓ →
+    eat:  spacebar
+  </pre>
+  <script>
+  var board = document.getElementById('gameBoard');
+  var validAnswers = [];
 
-            //default grid settings
-            var width = 6;
-            var height = 5;
-            var gridTotal = width * height;
+  // some default game settings
+  var width = 6;
+  var height = 5;
+  var gridTotal = width * height;
 
-            var multiplesOf = 2;
-            var validAnswers = [];
+  var multiplesOf = 2;
 
-            var level = 1,
-                lives = 3,
-                score = 0,
-                eaten = 0;
+  var level = 1,
+  lives = 3,
+  score = 0,
+  eaten = 0;
 
-            //random number
-            function getNumber(min, max) {
-                var number = Math.floor(Math.random() * (max - min + 1)) + min;
-                if (isMultiple(number)) {
-                    validAnswers.push(number);
-                }
-                return number;
-            }
+  var messageOverride = '';
+  var showingMessage = false;
 
-            //generate grid
-            function generateGrid(x, y, min, max, el) {
-                var muncherStart = Math.round( (x * y) / 2);
-                var gridCount = 1;
-                var grid = document.createElement('table');
-                for(var i = 0; i < y; i++) {
-                    var row = grid.insertRow();
-                    for(var j = 0; j < x; j++) {
-                        var cell = row.insertCell();
-                        cell.id = gridCount;
-                        if(gridCount === muncherStart) {
-                            cell.className = 'muncher';
-                        }
-                        cell.innerText = getNumber(min,max);
-                        gridCount++;
-                    }
-                }
-                el.appendChild(grid);
-            }
-            generateGrid(width, height, 1, 25, board);
-            updateLives(0);
-            updateLevel(0);
-            updateScore(0);
+  // start game
+  generateGrid(width, height, 1, 25, board);
+  updateLives(0);
+  updateLevel(0);
+  updateScore(0);
 
-            //movement directions
-            function moveRight() {
-                var muncher = document.querySelector('.muncher');
-                var currentMuncherLocation = parseInt(muncher.id, 10);
-                var newMuncherLocation = currentMuncherLocation + 1;
-                if(currentMuncherLocation % width !== 0) {
-                    muncher.className = '';
-                    document.getElementById(newMuncherLocation).className = 'muncher';
-                }
-            }
-            function moveLeft() {
-                var muncher = document.querySelector('.muncher');
-                var currentMuncherLocation = parseInt(muncher.id, 10);
-                var newMuncherLocation = currentMuncherLocation - 1;
-                if(currentMuncherLocation % width !== 1) {
-                    muncher.className = '';
-                    document.getElementById(newMuncherLocation).className = 'muncher';
-                }
-            }
-            function moveUp() {
-                var muncher = document.querySelector('.muncher');
-                var currentMuncherLocation = parseInt(muncher.id, 10);
-                var newMuncherLocation = currentMuncherLocation - width;
-                if(currentMuncherLocation > width) {
-                    muncher.className = '';
-                    document.getElementById(newMuncherLocation).className = 'muncher';
-                }
-            }
-            function moveDown() {
-                var muncher = document.querySelector('.muncher');
-                var currentMuncherLocation = parseInt(muncher.id, 10);
-                var newMuncherLocation = currentMuncherLocation + width;
-                if(currentMuncherLocation <= (gridTotal - width)) {
-                    muncher.className = '';
-                    document.getElementById(newMuncherLocation).className = 'muncher';
-                }
-            }
+  //random number
+  function getNumber(min, max) {
+    var number = Math.floor(Math.random() * (max - min + 1)) + min;
+    if (isMultiple(number)) {
+      validAnswers.push(number);
+    }
+    return number;
+  }
 
-            //eat number
-            function eat() {
-                var muncher = document.querySelector('.muncher');
-                var num = parseInt(muncher.innerText,10);
-                if(!isNaN(num)) {
-                    var inAnswersArray = validAnswers.indexOf(num);
-                    if(inAnswersArray > -1) {
-                        validAnswers.splice(inAnswersArray, 1);
-                        muncher.innerText = ' ';
-                        updateScore(multiplesOf);
-                        if (validAnswers.length < 1) {
-                            levelUp();
-                        }
-                    } else {
-                        console.log("cant eat: " + num);
-                        updateLives(-1);
-                    }
-                }
-            }
+  //generate grid
+  function generateGrid(x, y, min, max, el) {
+    var muncherStart = Math.round( gridTotal / 2);
+    var gridCount = 1;
+    var grid = document.createElement('table');
+    for(var i = 0; i < y; i++) {
+      var row = grid.insertRow();
+      for(var j = 0; j < x; j++) {
+        var cell = row.insertCell();
+        cell.id = gridCount;
+        if(gridCount === muncherStart) {
+          cell.className = 'muncher';
+        }
+        cell.innerText = getNumber(min,max);
+        gridCount++;
+      }
+    }
+    el.appendChild(grid);
+  }
 
-            //game logic
-            function isMultiple(value) {
-                if(value % multiplesOf === 0) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
+  //movement directions
+  function moveRight(character) {
+    var currentCharacterLocation = parseInt(character.id, 10);
+    var newCharacterLocation = currentCharacterLocation + 1;
+    if(currentCharacterLocation % width !== 0) {
+      var charClass = character.className;
+      character.className = '';
+      document.getElementById(newCharacterLocation).className = charClass;
+      return true;
+    } else {
+      return false;
+    }
+  }
+  function moveLeft(character) {
+    var currentCharacterLocation = parseInt(character.id, 10);
+    var newCharacterLocation = currentCharacterLocation - 1;
+    if(currentCharacterLocation % width !== 1) {
+      var charClass = character.className;
+      character.className = '';
+      document.getElementById(newCharacterLocation).className = charClass;
+      return true;
+    } else {
+      return false;
+    }
+  }
+  function moveUp(character) {
+    var currentCharacterLocation = parseInt(character.id, 10);
+    var newCharacterLocation = currentCharacterLocation - width;
+    if(currentCharacterLocation > width) {
+      var charClass = character.className;
+      character.className = '';
+      document.getElementById(newCharacterLocation).className = charClass;
+      return true;
+    } else {
+      return false;
+    }
+  }
+  function moveDown(character) {
+    var currentCharacterLocation = parseInt(character.id, 10);
+    var newCharacterLocation = currentCharacterLocation + width;
+    if(currentCharacterLocation <= (gridTotal - width)) {
+      var charClass = character.className;
+      character.className = '';
+      document.getElementById(newCharacterLocation).className = charClass;
+      return true;
+    } else {
+      return false;
+    }
+  }
 
-            // manage lives
-            function updateLives(value) {
-                var l = document.getElementById('lives');
-                lives = lives + value;
-                if(value > 0) {
-                    var html = '<span style="background-color:lightgreen;">' + lives + '</span>';
-                } else if (value < 0) {
-                    var html = '<span style="background-color:lightcoral;">' + lives + '</span>';
-                } else {
-                    var html = '<span>' + lives + '</span>';
-                }
-                l.innerHTML = html;
-                l.focus();
-                l.getElementsByTagName('span')[0].style.background = 'white';
-                if (lives < 1) {
-                     console.log("Game over: out of lives");
-                }
-            }
+  //eat number
+  function eat() {
+    var muncher = document.querySelector('.muncher');
+    var num = parseInt(muncher.innerText,10);
+    if(!isNaN(num)) {
+      var inAnswersArray = validAnswers.indexOf(num);
+      if(inAnswersArray > -1) {
+        validAnswers.splice(inAnswersArray, 1);
+        muncher.innerText = ' ';
+        eaten++;
+        if(eaten === 3) {
+          createTroggle();
+        }
+        updateScore(multiplesOf);
+        if (validAnswers.length < 1) {
+          levelUp();
+        }
+      } else {
+        showMessage('Ooops! ' + num + ' is not a multiple of ' + multiplesOf + '.');
+        updateLives(-1);
+      }
+    }
+  }
 
-            // manage level
-            function updateLevel(value) {
-                var l = document.getElementById('level');
-                level = level + value;
-                if(value > 0) {
-                    var html = '<span style="background-color:lightgreen;">' + level + '</span>';
-                } else if (value < 0) {
-                    var html = '<span style="background-color:lightcoral;">' + level + '</span>';
-                } else {
-                    var html = '<span>' + level + '</span>';
-                }
-                l.innerHTML = html;
-                l.focus();
-                l.getElementsByTagName('span')[0].style.background = 'white';
-            }
+  //game logic
+  function isMultiple(value) {
+    if(value % multiplesOf === 0) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
-            // manage score
-            function updateScore(value) {
-                var s = document.getElementById('score');
-                score = score + value;
-                if(value > 0) {
-                    var html = '<span style="background-color:lightgreen;">' + score + '</span>';
-                } else {
-                    var html = '<span>' + score + '</span>';
-                }
-                s.innerHTML = html;
-                s.focus();
-                s.getElementsByTagName('span')[0].style.background = 'white';
-                eaten++;
-            }
+  // manage lives
+  function updateLives(value) {
+    var l = document.getElementById('lives');
+    lives = lives + value;
+    if(value > 0) {
+      var html = '<span style="background-color:lightgreen;">' + lives + '</span>';
+    } else if (value < 0) {
+      var html = '<span style="background-color:lightcoral;">' + lives + '</span>';
+    } else {
+      var html = '<span>' + lives + '</span>';
+    }
+    l.innerHTML = html;
+    l.focus();
+    l.getElementsByTagName('span')[0].style.background = 'white';
+    if (lives < 1) {
+      showMessage('Game Over: Out of Lives');
+    }
+  }
 
-            //new level
-            function levelUp() {
-              //clear board
-              board.innerHTML = '';
-              validAnswers = [];
+  // manage level
+  function updateLevel(value) {
+    var l = document.getElementById('level');
+    level = level + value;
+    if(value > 0) {
+      var html = '<span style="background-color:lightgreen;">' + level + '</span>';
+    } else if (value < 0) {
+      var html = '<span style="background-color:lightcoral;">' + level + '</span>';
+    } else {
+      var html = '<span>' + level + '</span>';
+    }
+    l.innerHTML = html;
+    l.focus();
+    l.getElementsByTagName('span')[0].style.background = 'white';
+  }
 
-              //jump to next level
-              updateLevel(1);
-              updateLives(1);
-              multiplesOf++;
-              document.getElementById('multiple').innerText = multiplesOf;
-              generateGrid(width, height, 1, Math.round(25 * 0.5 * multiplesOf), board);
-            }
+  // manage score
+  function updateScore(value) {
+    var s = document.getElementById('score');
+    score = score + value;
+    if(value > 0) {
+      var html = '<span style="background-color:lightgreen;">' + score + '</span>';
+    } else {
+      var html = '<span>' + score + '</span>';
+    }
+    s.innerHTML = html;
+    s.focus();
+    s.getElementsByTagName('span')[0].style.background = 'white';
+  }
 
-            //user input
-            document.onkeydown = function(e) {
-                e = e || window.event;
-                switch(e.which || e.keyCode) {
-                    case 37: // left
-                        moveLeft();
-                    break;
+  //new level
+  function levelUp() {
+    //clear board
+    board.innerHTML = '';
+    validAnswers = [];
 
-                    case 38: // up
-                        moveUp();
-                    break;
+    //jump to next level
+    updateLevel(1);
+    updateLives(1);
+    multiplesOf++;
+    document.getElementById('multiple').innerText = multiplesOf;
+    generateGrid(width, height, 1, Math.round(25 * 0.5 * multiplesOf), board);
+  }
 
-                    case 39: // right
-                        moveRight();
-                    break;
+  // show message
+  function showMessage(msgText) {
+    var rows = document.getElementsByTagName('tr');
+    var rowNum = Math.round(rows.length / 2) - 1;
+    var centerRow = rows[rowNum];
+    messageOverride = centerRow.innerHTML;
+    centerRow.innerHTML = '<td colspan="' + width + '"><div class="message">' + msgText + '<br>Press SPACE BAR to continue.</div></td>';
+    showingMessage = true;
+  }
+  // hide message
+  function hideMessage() {
+    if(lives < 1) {
+      // reset game
+      board.innerHTML = '';
+      validAnswers = [];
+      generateGrid(width, height, 1, 25, board);
+      updateLevel((1 - level));
+      updateScore((0 - score));
+      updateLives((3 - lives));
+      multiplesOf = 2;
+      document.getElementById('multiple').innerText = multiplesOf;
+    } else {
+      var rows = document.getElementsByTagName('tr');
+      var rowNum = Math.round(rows.length / 2) - 1;
+      var centerRow = rows[rowNum];
+      centerRow.innerHTML = messageOverride;
+      showingMessage = false;
+    }
+  }
 
-                    case 40: // down
-                        moveDown();
-                    break;
+  // troggles
+  function createTroggle() {
+    var corners = [1,width,(gridTotal - (width - 1)),gridTotal];
+    var rnd = Math.floor(Math.random()*4);
+    var start = corners[rnd];
+    document.getElementById(start).className = 'troggle';
+    setInterval(moveTroggle, 2000);
+  }
+  function moveTroggle() {
+    console.log("moving");
+    var directions = ["up","right","down","left"];
+    var rnd = Math.floor(Math.random()*4);
+    var dir = directions[rnd];
 
-                    case 32: // spacebar
-                        eat();
-                    break;
 
-                    default: return; // exit this handler for other keys
-                }
-                e.preventDefault();
-            };
-        </script>
-    </body>
+    // TODO: collision detection for lost life
+
+
+
+
+    switch (dir) {
+      case "up":
+      if (!moveUp(document.querySelector('.troggle'))){
+        moveTroggle();
+      };
+      break;
+      case "right":
+      if (!moveRight(document.querySelector('.troggle'))){
+        moveTroggle();
+      };
+      break;
+      case "down":
+      if (!moveDown(document.querySelector('.troggle'))){
+        moveTroggle();
+      };
+      break;
+      case "left":
+      if (!moveLeft(document.querySelector('.troggle'))){
+        moveTroggle();
+      };
+      break;
+      default:
+      return;
+    }
+
+  }
+
+  //user input
+  document.onkeydown = function(e) {
+    e = e || window.event;
+    switch(e.which || e.keyCode) {
+      // left
+      case 37:
+      if(!showingMessage) {
+        moveLeft(document.querySelector('.muncher'));
+      }
+      break;
+      // up
+      case 38:
+      if(!showingMessage) {
+        moveUp(document.querySelector('.muncher'));
+      }
+      break;
+      // right
+      case 39:
+      if(!showingMessage) {
+        moveRight(document.querySelector('.muncher'));
+      }
+      break;
+      // down
+      case 40:
+      if(!showingMessage) {
+        moveDown(document.querySelector('.muncher'));
+      }
+      break;
+      // spacebar
+      case 32:
+      if(showingMessage){
+        hideMessage();
+      } else {
+        eat();
+      }
+      break;
+      // all other keys
+      default: return;
+    }
+    e.preventDefault();
+  };
+</script>
+</body>
 </html>
