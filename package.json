@@ -1,0 +1,9 @@
+{
+  "name": "numbers-game",
+  "version": "1.0.0",
+  "description": "A game based on the childhood classic: Number Munchers",
+  "main": "index.js",
+  "dependencies": {
+    "express": "^4.10.7"
+  }
+}
